@@ -362,6 +362,7 @@ class OpauthStrategy {
 	 * @return string Content resulted from request, without headers
 	 */
 	public static function serverGet($url, $data, $options = null, &$responseHeaders = null) {
+        $options['http']['method'] = 'GET';
 		return self::httpRequest($url.'?'.http_build_query($data, '', '&'), $options, $responseHeaders);
 	}
 
@@ -418,12 +419,27 @@ class OpauthStrategy {
 		} else {
 			$options = array('http' => array('header' => 'User-Agent: opauth'));
 		}
-		$context = stream_context_create($options);
 
-		$content = file_get_contents($url, false, $context);
-		$responseHeaders = implode("\r\n", $http_response_header);
+        $curl = curl_init();
+        if ($options['http']['method'] == 'POST') {
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $options['http']['content']);
+        }
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, ($options['http']['method'] == 'POST') ? 1 : 0);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_HEADER, 0);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array(
+                'Content-type: application/x-www-form-urlencoded',
+                'User-Agent: opauth',
+                'Content-Length: ' . strlen($options['http']['content'])
+            )
+        );
+        curl_setopt($curl, CURLOPT_TIMEOUT, 5);
+        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
 
-		return $content;
+        $content = curl_exec($curl);
+
+        return $content;
 	}
 
 	/**
