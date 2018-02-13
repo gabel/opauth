@@ -435,7 +435,13 @@ class OpauthStrategy {
             )
         );
         curl_setopt($curl, CURLOPT_TIMEOUT, 5);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
         curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+
+        if (!empty($options['http']['proxy'])) {
+            curl_setopt($curl, CURLOPT_PROXY, $options['http']['proxy']);
+        }
 
         $content = curl_exec($curl);
 
